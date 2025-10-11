@@ -1,7 +1,6 @@
 // (src/)app/api/_diag/db/route.ts
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { sql } from "drizzle-orm";
+import { neon } from "@neondatabase/serverless";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,19 +12,26 @@ export async function GET() {
   let pingMs = 0, queryMs = 0;
 
   try {
+    const url = process.env.DATABASE_URL;
+    if (!url) {
+      return NextResponse.json({ ok: false, error: "Missing DATABASE_URL" }, { status: 500 });
+    }
+    const sql = neon(url);
+
+    // ping
     const t1 = nowMs();
-    await db.execute(sql`select 1 as x`);
+    await sql`select 1 as x`;
     pingMs = nowMs() - t1;
 
+    // απλό read (αν δεν υπάρχει places, άλλαξέ το σε `select now() as now`)
     const t2 = nowMs();
-    // Αν δεν υπάρχει ακόμα places, άλλαξέ το προσωρινά σε: select now() as now
-    const r = await db.execute(sql`select count(*)::int as cnt from public.places`);
+    const rows = await sql`select count(*)::int as cnt from public.places`;
     queryMs = nowMs() - t2;
 
     return NextResponse.json({
       ok: true,
       timings_ms: { total: nowMs() - t0, db_ping: pingMs, simple_query: queryMs },
-      result: r.rows?.[0] ?? null,
+      result: rows?.[0] ?? null,
       ts: new Date().toISOString()
     });
   } catch (e: any) {
