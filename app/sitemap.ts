@@ -1,10 +1,21 @@
-import type { MetadataRoute } from "next";
+// app/sitemap.ts
+import { env } from "@/lib/env";
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const base = process.env.SITE_URL ?? "https://remembertogo.com";
+export default async function sitemap() {
+  const base = new URL(env.SITE_URL);
   return [
-    { url: `${base}/`, changeFrequency: 'weekly', priority: 1 },
-    { url: `${base}/map`, changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${base}/admin`, changeFrequency: 'monthly', priority: 0.4 }
+    { url: new URL("/", base).toString(), lastModified: new Date() },
+    // add sections…
   ];
+}
+
+// app/robots.ts
+import { env } from "@/lib/env";
+
+export default function robots() {
+  return {
+    rules: { userAgent: "*", allow: "/" },
+    sitemap: `${env.SITE_URL}/sitemap.xml`,
+    host: env.SITE_URL,
+  };
 }
