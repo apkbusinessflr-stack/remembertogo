@@ -1,27 +1,65 @@
 // middleware.ts
-import { NextResponse, NextRequest } from "next/server";
-import { env, adminEmails } from "./lib/env";
+import { NextResponse, type NextRequest } from "next/server";
+import { adminEmails } from "./lib/env";
 
-export async function middleware(req: NextRequest) {
-  const { pathname } = new URL(req.url);
-  if (pathname.startsWith("/api/admin")) {
-    // simple bearer or signature check for cron
-    const sig = req.headers.get("x-cron-signature");
-    if (pathname.includes("/cron/")) {
-      if (!sig || sig !== env.CRON_SECRET) {
-        return new NextResponse("Forbidden (cron)", { status: 403 });
-      }
-      return NextResponse.next();
-    }
-    // require authenticated admin for non-cron admin routes
-    const email = req.headers.get("x-user-email"); // see server action below
-    if (!email || !adminEmails.has(email.toLowerCase())) {
-      return new NextResponse("Forbidden", { status: 403 });
-    }
+/**
+ * Lightweight JWT decode που δουλεύει στην Edge Runtime (χωρίς Node libs).
+ * Δεν επαληθεύει υπογραφή — απλά διαβάζει claims για authorization gate.
+ */
+function decodeJwt<T = any>(jwt: string): T | null {
+  try {
+    const parts = jwt.split(".");
+    if (parts.length !== 3) return null;
+    const payload = parts[1]
+      .replace(/-/g, "+")
+      .replace(/_/g, "/")
+      .padEnd(Math.ceil(parts[1].length / 4) * 4, "=");
+    const json = Buffer.from(payload, "base64").toString("utf8");
+    return JSON.parse(json) as T;
+  } catch {
+    return null;
   }
-  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/api/admin/:path*"],
+  matcher: ["/admin/:path*"], // φιλτράρουμε μόνο admin routes
 };
+
+export async function middleware(req: NextRequest) {
+  const url = req.nextUrl;
+
+  // 1) Αν δεν έχουμε καθόλου adminEmails, άσε να περάσει (fail-open για αρχική φάση)
+  if (!adminEmails.length) {
+    return NextResponse.next();
+  }
+
+  // 2) Πάρε το Supabase access token cookie
+  //    (Supabase ορίζει "sb-access-token" για το session)
+  const access = req.cookies.get("sb-access-token")?.value;
+  if (!access) {
+    // Not logged in -> redirect στο /login με redirect back
+    const loginUrl = new URL("/login", url.origin);
+    loginUrl.searchParams.set("redirectTo", url.pathname + url.search);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // 3) Διάβασε το email από τα claims
+  type Claims = { email?: string; exp?: number };
+  const claims = decodeJwt<Claims>(access);
+  const email = claims?.email?.toLowerCase();
+
+  // 4) Έλεγχος λήξης (προαιρετικός αλλά καλός)
+  if (claims?.exp && Date.now() / 1000 > claims.exp) {
+    const loginUrl = new URL("/login", url.origin);
+    loginUrl.searchParams.set("redirectTo", url.pathname + url.search);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // 5) Άδεια μόνο αν email ∈ ADMIN_EMAILS
+  if (!email || !adminEmails.map(e => e.toLowerCase()).includes(email)) {
+    // 403 για μη-authorized logged-in χρήστες
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
+
+  return NextResponse.next();
+}
