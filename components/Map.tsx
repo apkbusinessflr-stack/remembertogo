@@ -9,11 +9,18 @@ import maplibregl, {
   GeoJSONSourceSpecification,
   ExpressionSpecification,
 } from 'maplibre-gl';
-import type { Place } from '@/types/place';
-// import 'maplibre-gl/dist/maplibre-gl.css'; // αν δεν το έχεις global
+
+// Δέχεται ids ως string ή number για να μην “σκάει” σε demos/tests
+type PlaceInput = {
+  id: string | number;
+  name: string;
+  lat: number;
+  lng: number;
+  visited?: boolean;
+};
 
 type Props = {
-  places: Place[];
+  places: PlaceInput[];
   center?: LngLatLike; // default: Αθήνα
   zoom?: number;       // default: 12
   cluster?: boolean;   // default: false
@@ -38,10 +45,9 @@ export default function Map({ places, center, zoom, cluster = false }: Props) {
     });
 
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
-
     map.on('load', () => setLoaded(true));
-    mapRef.current = map;
 
+    mapRef.current = map;
     return () => {
       map.remove();
       mapRef.current = null;
@@ -49,7 +55,6 @@ export default function Map({ places, center, zoom, cluster = false }: Props) {
     };
   }, [center, zoom, styleUrl]);
 
-  // Source data από τα places
   const sourceData: GeoJSONSourceSpecification = {
     type: 'geojson',
     data: {
@@ -75,7 +80,7 @@ export default function Map({ places, center, zoom, cluster = false }: Props) {
       map.addSource('places', sourceData);
     }
 
-    // Expressions & layers
+    // Colors by visited
     const visitedColorExpr: ExpressionSpecification = [
       'case',
       ['==', ['get', 'visited'], true],
@@ -87,7 +92,7 @@ export default function Map({ places, center, zoom, cluster = false }: Props) {
       id: 'places-unclustered',
       type: 'circle',
       source: 'places',
-      filter: ['!', ['has', 'point_count']],
+      filter: ['!', ['has', 'point_count']], // σωστό NOT (όχι '|')
       paint: {
         'circle-radius': 6,
         'circle-stroke-width': 1,
