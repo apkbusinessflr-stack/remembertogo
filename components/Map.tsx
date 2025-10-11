@@ -1,162 +1,64 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import maplibregl, {
-  Map as MlMap,
-  LngLatLike,
-  CircleLayerSpecification,
-  SymbolLayerSpecification,
-  GeoJSONSourceSpecification,
-  ExpressionSpecification,
-  MapLayerMouseEvent,
-} from 'maplibre-gl';
-
-type PlaceInput = {
-  id: string | number;
-  name: string;
-  lat: number;
-  lng: number;
-  visited?: boolean;
-};
+import { useEffect, useRef, useState } from "react";
+import type { Map as MapLibreMap } from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css"; // αν δεν το έβαλες global
+import * as maplibregl from "maplibre-gl";
+import { clientEnv } from "@/lib/env";
 
 type Props = {
-  places: PlaceInput[];
-  center?: LngLatLike;
+  center?: [number, number]; // [lng, lat]
   zoom?: number;
-  cluster?: boolean;
 };
 
-export default function Map({ places, center, zoom, cluster = false }: Props) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<MlMap | null>(null);
-  const [loaded, setLoaded] = useState(false);
+export default function Map({ center = [23.7275, 37.9838], zoom = 5 }: Props) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<MapLibreMap | null>(null);
+  const [ready, setReady] = useState(false);
 
-  const styleUrl = `https://api.maptiler.com/maps/streets-v2/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`;
+  // Πάρε το token από το clientEnv
+  const token = clientEnv.NEXT_PUBLIC_MAPTILER_KEY;
 
   useEffect(() => {
-    if (!ref.current) return;
-    if (mapRef.current) return;
+    // Αν δεν υπάρχει token, μην αρχικοποιείς, μόνο εμφάνισε μήνυμα
+    if (!token) return;
 
-    const map = new maplibregl.Map({
-      container: ref.current,
-      style: styleUrl,
-      center: center ?? [23.7275, 37.9838],
-      zoom: zoom ?? 12,
-    });
+    if (containerRef.current && !mapRef.current) {
+      mapRef.current = new maplibregl.Map({
+        container: containerRef.current,
+        style: `https://api.maptiler.com/maps/streets-v2/style.json?key=${token}`,
+        center,
+        zoom,
+        attributionControl: true
+      });
 
-    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
-    map.on('load', () => setLoaded(true));
+      mapRef.current.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
+      mapRef.current.on("load", () => setReady(true));
+    }
 
-    mapRef.current = map;
     return () => {
-      map.remove();
+      mapRef.current?.remove();
       mapRef.current = null;
-      setLoaded(false);
     };
-  }, [center, zoom, styleUrl]);
+  }, [token, center, zoom]);
 
-  const sourceData: GeoJSONSourceSpecification = {
-    type: 'geojson',
-    data: {
-      type: 'FeatureCollection',
-      features: places.map((p) => ({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
-        properties: { id: String(p.id), name: p.name, visited: Boolean(p.visited) },
-      })),
-    },
-    cluster,
-    clusterRadius: 40,
-  };
+  if (!token) {
+    return (
+      <div className="rounded-xl border p-4 bg-yellow-50 text-yellow-900">
+        <div className="font-semibold mb-1">Map token λείπει</div>
+        <div className="text-sm">
+          Βάλε στο Vercel το <code>NEXT_PUBLIC_MAPTILER_KEY</code> (ή <code>MAP_TOKEN</code>) και κάνε redeploy.
+        </div>
+      </div>
+    );
+  }
 
-  useEffect(() => {
-    if (!loaded || !mapRef.current) return;
-    const map = mapRef.current;
-
-    if (map.getSource('places')) {
-      (map.getSource('places') as any).setData(sourceData.data);
-    } else {
-      map.addSource('places', sourceData);
-    }
-
-    const visitedColorExpr: ExpressionSpecification = [
-      'case',
-      ['==', ['get', 'visited'], true],
-      '#4ade80',
-      '#ef4444',
-    ];
-
-    const unclusteredLayer: CircleLayerSpecification = {
-      id: 'places-unclustered',
-      type: 'circle',
-      source: 'places',
-      filter: ['!', ['has', 'point_count']],
-      paint: {
-        'circle-radius': 6,
-        'circle-stroke-width': 1,
-        'circle-stroke-color': '#ffffff',
-        'circle-color': visitedColorExpr as any,
-      },
-    };
-
-    const clustersLayer: CircleLayerSpecification = {
-      id: 'places-clusters',
-      type: 'circle',
-      source: 'places',
-      filter: ['has', 'point_count'],
-      paint: {
-        'circle-color': [
-          'step',
-          ['get', 'point_count'],
-          '#93c5fd', 10, '#60a5fa', 50, '#3b82f6',
-        ],
-        'circle-radius': [
-          'step',
-          ['get', 'point_count'],
-          14, 10, 18, 50, 24,
-        ],
-        'circle-stroke-width': 1,
-        'circle-stroke-color': '#ffffff',
-      },
-    };
-
-    const clusterCountLayer: SymbolLayerSpecification = {
-      id: 'places-cluster-count',
-      type: 'symbol',
-      source: 'places',
-      filter: ['has', 'point_count'],
-      layout: {
-        'text-field': ['to-string', ['get', 'point_count']],
-        'text-size': 12,
-      },
-      paint: { 'text-color': '#111827' },
-    };
-
-    const ensureLayer = (layer: CircleLayerSpecification | SymbolLayerSpecification) => {
-      if (map.getLayer(layer.id)) map.removeLayer(layer.id);
-      map.addLayer(layer);
-    };
-
-    if (cluster) {
-      ensureLayer(clustersLayer);
-      ensureLayer(clusterCountLayer);
-    } else {
-      if (map.getLayer('places-clusters')) map.removeLayer('places-clusters');
-      if (map.getLayer('places-cluster-count')) map.removeLayer('places-cluster-count');
-    }
-    ensureLayer(unclusteredLayer);
-
-    const clickHandler = (e: MapLayerMouseEvent) => {
-      const f = e.features?.[0];
-      const name = (f?.properties as any)?.name as string | undefined;
-      new maplibregl.Popup().setLngLat(e.lngLat).setHTML(`<strong>${name ?? 'Place'}</strong>`).addTo(map);
-    };
-    map.on('click', 'places-unclustered', clickHandler);
-
-    return () => {
-      map.off('click', 'places-unclustered', clickHandler);
-    };
-  }, [loaded, cluster, JSON.stringify(places)]);
-
-  return <div ref={ref} className="h-[480px] w-full rounded-2xl overflow-hidden border border-white/20" />;
+  return (
+    <div className="space-y-2">
+      <div ref={containerRef} className="h-[480px] w-full rounded-xl overflow-hidden border" />
+      <div className="text-xs text-neutral-500">
+        {ready ? "Map ready" : "Loading map…"}
+      </div>
+    </div>
+  );
 }
