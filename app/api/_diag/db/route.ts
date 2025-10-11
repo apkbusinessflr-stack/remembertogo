@@ -1,37 +1,49 @@
-import { NextRequest, NextResponse } from "next/server";
+// app/api/_diag/db/route.ts
+import { NextResponse } from "next/server";
+
+// Αν έχεις ήδη Drizzle & Neon, κράτα αυτά τα imports.
+// Προσαρμόσ' τα αν οι διαδρομές διαφέρουν στο repo σου.
 import { db } from "@/lib/db";
 import { sql } from "drizzle-orm";
 
-function now() { return Number(process.hrtime.bigint()) / 1e6; } // ms
+// **Σημαντικό**: τρέχει σε Node runtime (όχι Edge), και πάντα δυναμικά.
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-export const dynamic = "force-dynamic"; // always run fresh (no static cache)
+function nowMs() {
+  return Number(process.hrtime.bigint()) / 1e6; // high-resolution ms
+}
 
-export async function GET(_req: NextRequest) {
-  const t0 = now();
-  let tDbConnect = 0, tPing = 0, tSimpleQuery = 0, err: any = null;
+export async function GET() {
+  const t0 = nowMs();
+  let pingMs = 0;
+  let queryMs = 0;
+  let err: any = null;
 
   try {
-    // Neon + Drizzle χρησιμοποιούν HTTP pooling, οπότε το "connect" κοστίζει ελάχιστα σε warm.
-    const t1 = now();
-    // ping
+    const t1 = nowMs();
     await db.execute(sql`select 1 as x`);
-    tPing = now() - t1;
+    pingMs = nowMs() - t1;
 
-    const t2 = now();
-    // απλό query: πόσες public places έχουμε (ή άλλα στατιστικά που έχεις)
-    const res = await db.execute(sql`select count(*)::int as cnt from places`);
-    tSimpleQuery = now() - t2;
+    const t2 = nowMs();
+    // Διάλεξα ένα απλό read. Αν δεν υπάρχει ο πίνακας 'places',
+    // άλλαξέ το π.χ. σε `select now()` ή σε οποιονδήποτε υπάρχει.
+    const r = await db.execute(sql`select count(*)::int as cnt from places`);
+    queryMs = nowMs() - t2;
 
+    const total = nowMs() - t0;
+    return NextResponse.json({
+      ok: true,
+      timings_ms: { total, db_ping: pingMs, simple_query: queryMs },
+      result: r.rows?.[0] ?? null,
+      ts: new Date().toISOString()
+    });
   } catch (e: any) {
     err = { message: e?.message ?? String(e) };
+    const total = nowMs() - t0;
+    return NextResponse.json(
+      { ok: false, err, timings_ms: { total, db_ping: pingMs, simple_query: queryMs } },
+      { status: 500 }
+    );
   }
-
-  const total = now() - t0;
-  return NextResponse.json({
-    ok: !err, err,
-    timings_ms: {
-      total, db_ping: tPing, simple_query: tSimpleQuery
-    },
-    ts: new Date().toISOString()
-  });
 }
