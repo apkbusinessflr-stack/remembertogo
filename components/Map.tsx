@@ -11,7 +11,7 @@ import maplibregl, {
   MapLayerMouseEvent, // <-- σωστός τύπος event για click σε layer
 } from 'maplibre-gl';
 
-// Δέχεται ids ως string ή number για να μην “σκάει” σε demos/tests
+// ids: string|number για να μην “σκάει” σε demos/tests
 type PlaceInput = {
   id: string | number;
   name: string;
@@ -93,7 +93,7 @@ export default function Map({ places, center, zoom, cluster = false }: Props) {
       id: 'places-unclustered',
       type: 'circle',
       source: 'places',
-      filter: ['!', ['has', 'point_count']], // σωστό NOT
+      filter: ['!', ['has', 'point_count']], // NOT cluster
       paint: {
         'circle-radius': 6,
         'circle-stroke-width': 1,
@@ -149,7 +149,7 @@ export default function Map({ places, center, zoom, cluster = false }: Props) {
     }
     ensureLayer(unclusteredLayer);
 
-    // ✅ Σωστός τύπος event για click σε layer
+    // ✅ Σωστός τύπος event (ΧΩΡΙΣ EventData)
     const clickHandler = (e: MapLayerMouseEvent) => {
       const f = e.features?.[0];
       const name = (f?.properties as any)?.name as string | undefined;
