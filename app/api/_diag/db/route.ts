@@ -1,4 +1,3 @@
-// (src/)app/api/_diag/db/route.ts
 import { NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
 
@@ -10,20 +9,15 @@ const nowMs = () => Number(process.hrtime.bigint()) / 1e6;
 export async function GET() {
   const t0 = nowMs();
   let pingMs = 0, queryMs = 0;
-
   try {
     const url = process.env.DATABASE_URL;
-    if (!url) {
-      return NextResponse.json({ ok: false, error: "Missing DATABASE_URL" }, { status: 500 });
-    }
+    if (!url) return NextResponse.json({ ok: false, error: "Missing DATABASE_URL" }, { status: 500 });
     const sql = neon(url);
 
-    // ping
     const t1 = nowMs();
     await sql`select 1 as x`;
     pingMs = nowMs() - t1;
 
-    // απλό read (αν δεν υπάρχει places, άλλαξέ το σε `select now() as now`)
     const t2 = nowMs();
     const rows = await sql`select count(*)::int as cnt from public.places`;
     queryMs = nowMs() - t2;
