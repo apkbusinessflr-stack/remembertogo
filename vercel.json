@@ -1,14 +1,13 @@
+// vercel.json (απόσπασμα)
 {
-  "version": 2,
   "headers": [
     {
-      "source": "/:path*",
+      "source": "/(.*)",
       "headers": [
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' https: data:; connect-src 'self' https:; frame-ancestors 'self'; base-uri 'self';" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
-        { "key": "Permissions-Policy", "value": "geolocation=(), microphone=()" }
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; connect-src 'self' https://*.tile.openstreetmap.org https://api.maptiler.com https://*.supabase.co; worker-src 'self' blob:; font-src 'self' https:; frame-ancestors 'none'; base-uri 'self';"
+        }
       ]
     }
   ],
