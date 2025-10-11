@@ -1,4 +1,3 @@
-// lib/env.ts
 const defaults = {
   NEXT_PUBLIC_SUPABASE_URL: "",
   NEXT_PUBLIC_SUPABASE_ANON_KEY: "",
@@ -23,9 +22,8 @@ function readEnv(): Record<Key, string> {
 
 export const env = readEnv();
 
-// Client-safe μόνο
 export const clientEnv = {
   NEXT_PUBLIC_SUPABASE_URL: env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  NEXT_PUBLIC_MAPTILER_KEY: env.NEXT_PUBLIC_MAPTILER_KEY || env.MAP_TOKEN, // backward compat
+  NEXT_PUBLIC_MAPTILER_KEY: env.NEXT_PUBLIC_MAPTILER_KEY || env.MAP_TOKEN
 };
