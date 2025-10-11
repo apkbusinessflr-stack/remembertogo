@@ -8,10 +8,9 @@ import maplibregl, {
   SymbolLayerSpecification,
   GeoJSONSourceSpecification,
   ExpressionSpecification,
-  MapLayerMouseEvent, // <-- σωστός τύπος event για click σε layer
+  MapLayerMouseEvent,
 } from 'maplibre-gl';
 
-// ids: string|number για να μην “σκάει” σε demos/tests
 type PlaceInput = {
   id: string | number;
   name: string;
@@ -22,9 +21,9 @@ type PlaceInput = {
 
 type Props = {
   places: PlaceInput[];
-  center?: LngLatLike; // default: Αθήνα
-  zoom?: number;       // default: 12
-  cluster?: boolean;   // default: false
+  center?: LngLatLike;
+  zoom?: number;
+  cluster?: boolean;
 };
 
 export default function Map({ places, center, zoom, cluster = false }: Props) {
@@ -74,14 +73,12 @@ export default function Map({ places, center, zoom, cluster = false }: Props) {
     if (!loaded || !mapRef.current) return;
     const map = mapRef.current;
 
-    // Source
     if (map.getSource('places')) {
       (map.getSource('places') as any).setData(sourceData.data);
     } else {
       map.addSource('places', sourceData);
     }
 
-    // Colors by visited
     const visitedColorExpr: ExpressionSpecification = [
       'case',
       ['==', ['get', 'visited'], true],
@@ -93,7 +90,7 @@ export default function Map({ places, center, zoom, cluster = false }: Props) {
       id: 'places-unclustered',
       type: 'circle',
       source: 'places',
-      filter: ['!', ['has', 'point_count']], // NOT cluster
+      filter: ['!', ['has', 'point_count']],
       paint: {
         'circle-radius': 6,
         'circle-stroke-width': 1,
@@ -149,14 +146,10 @@ export default function Map({ places, center, zoom, cluster = false }: Props) {
     }
     ensureLayer(unclusteredLayer);
 
-    // ✅ Σωστός τύπος event (ΧΩΡΙΣ EventData)
     const clickHandler = (e: MapLayerMouseEvent) => {
       const f = e.features?.[0];
       const name = (f?.properties as any)?.name as string | undefined;
-      new maplibregl.Popup()
-        .setLngLat(e.lngLat)
-        .setHTML(`<strong>${name ?? 'Place'}</strong>`)
-        .addTo(map);
+      new maplibregl.Popup().setLngLat(e.lngLat).setHTML(`<strong>${name ?? 'Place'}</strong>`).addTo(map);
     };
     map.on('click', 'places-unclustered', clickHandler);
 
