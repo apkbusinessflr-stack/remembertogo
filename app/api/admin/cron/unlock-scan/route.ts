@@ -1,38 +1,21 @@
-import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+// app/api/admin/cron/unlock-scan/route.ts
+import crypto from "node:crypto";
+import { NextResponse, NextRequest } from "next/server";
 import { env } from "@/lib/env";
+// import { db } from "@/lib/db";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
-export async function POST() {
-  try {
-    const now = new Date();
-    const since = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-    since.setUTCDate(since.getUTCDate() - env.INTEREST_WINDOW_DAYS);
-
-    const rows = await db`
-      SELECT country_code, SUM(count)::int AS total
-      FROM interest_counters
-      WHERE day >= ${since.toISOString()}
-      GROUP BY country_code
-    ` as any;
-
-    let unlocked = 0;
-    for (const r of rows) {
-      if ((r.total ?? 0) >= env.INTEREST_THRESHOLD) {
-        await db`
-          UPDATE countries
-          SET approved = true, approved_at = NOW()
-          WHERE code = ${r.country_code} AND (approved IS DISTINCT FROM true)
-        `;
-        unlocked++;
-      }
-    }
-    return NextResponse.json({ ok: true, checked: rows.length, unlocked });
-  } catch (e:any) {
-    return NextResponse.json({ ok: false, error: e.message ?? "unknown error" }, { status: 500 });
-  }
+function verifySignature(req: NextRequest) {
+  const sig = req.headers.get("x-cron-signature");
+  if (!sig) return false;
+  const body = "__constant__"; // ή timestamp header, ή raw body hash
+  const h = crypto.createHmac("sha256", env.CRON_SECRET).update(body).digest("hex");
+  return crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(h));
 }
 
-export const GET = POST;
+export async function POST(req: NextRequest) {
+  if (!verifySignature(req)) {
+    return NextResponse.json({ ok: false }, { status: 403 });
+  }
+  // await db.execute(`UPDATE scans SET locked = false WHERE locked = true`);
+  return NextResponse.json({ ok: true });
+}
