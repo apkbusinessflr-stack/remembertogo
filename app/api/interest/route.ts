@@ -7,12 +7,12 @@ export async function POST(req: NextRequest) {
   const { data } = await s.auth.getUser();
   if (!data.user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const body = await req.json().catch(() => ({}));
-  if (!body.country_code) return NextResponse.json({ error: "country_code required" }, { status: 400 });
+  const b = await req.json().catch(() => ({}));
+  if (!b.country_code) return NextResponse.json({ error: "country_code required" }, { status: 400 });
 
   const rows = await sql`
     insert into interest_votes (user_id, country_code, kind)
-    values (${data.user.id}::uuid, ${body.country_code}, ${body.kind || null})
+    values (${data.user.id}::uuid, ${b.country_code}, ${b.kind || null})
     on conflict (user_id, voted_on, country_code) do nothing
     returning 1
   `;
