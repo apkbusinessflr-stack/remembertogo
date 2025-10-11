@@ -1,10 +1,24 @@
 {
   "version": 2,
-  "functions": {},
+  "functions": {
+    "app/api/**/route.ts": {
+      "runtime": "nodejs20.x"
+    }
+  },
   "crons": [
     {
       "path": "/api/admin/cron/unlock-scan",
       "schedule": "0 4 * * *"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "x-frame-options", "value": "DENY" },
+        { "key": "x-content-type-options", "value": "nosniff" },
+        { "key": "referrer-policy", "value": "strict-origin-when-cross-origin" }
+      ]
     }
   ]
 }
