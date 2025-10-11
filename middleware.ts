@@ -1,65 +1,39 @@
 // middleware.ts
 import { NextResponse, type NextRequest } from "next/server";
-import { adminEmails } from "./lib/env";
+import { adminEmails } from "./lib/env"; // now exists
 
-/**
- * Lightweight JWT decode που δουλεύει στην Edge Runtime (χωρίς Node libs).
- * Δεν επαληθεύει υπογραφή — απλά διαβάζει claims για authorization gate.
- */
 function decodeJwt<T = any>(jwt: string): T | null {
   try {
     const parts = jwt.split(".");
     if (parts.length !== 3) return null;
-    const payload = parts[1]
-      .replace(/-/g, "+")
-      .replace(/_/g, "/")
-      .padEnd(Math.ceil(parts[1].length / 4) * 4, "=");
-    const json = Buffer.from(payload, "base64").toString("utf8");
-    return JSON.parse(json) as T;
+    const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(parts[1].length / 4) * 4, "=");
+    return JSON.parse(Buffer.from(payload, "base64").toString("utf8"));
   } catch {
     return null;
   }
 }
 
-export const config = {
-  matcher: ["/admin/:path*"], // φιλτράρουμε μόνο admin routes
-};
+export function middleware(req: NextRequest) {
+  if (!req.nextUrl.pathname.startsWith("/admin")) return NextResponse.next();
 
-export async function middleware(req: NextRequest) {
-  const url = req.nextUrl;
+  const auth = req.headers.get("authorization"); // "Bearer <JWT>"
+  const token = auth?.startsWith("Bearer ") ? auth.slice(7) : "";
+  const claims = token ? decodeJwt<any>(token) : null;
 
-  // 1) Αν δεν έχουμε καθόλου adminEmails, άσε να περάσει (fail-open για αρχική φάση)
-  if (!adminEmails.length) {
-    return NextResponse.next();
+  const email: string | undefined = claims?.email ?? claims?.user_metadata?.email;
+  const isExpired = claims?.exp && Date.now() / 1000 > claims.exp;
+
+  if (!token || !claims || isExpired) {
+    const login = new URL("/login", req.nextUrl.origin);
+    login.searchParams.set("redirectTo", req.nextUrl.pathname + req.nextUrl.search);
+    return NextResponse.redirect(login);
   }
 
-  // 2) Πάρε το Supabase access token cookie
-  //    (Supabase ορίζει "sb-access-token" για το session)
-  const access = req.cookies.get("sb-access-token")?.value;
-  if (!access) {
-    // Not logged in -> redirect στο /login με redirect back
-    const loginUrl = new URL("/login", url.origin);
-    loginUrl.searchParams.set("redirectTo", url.pathname + url.search);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // 3) Διάβασε το email από τα claims
-  type Claims = { email?: string; exp?: number };
-  const claims = decodeJwt<Claims>(access);
-  const email = claims?.email?.toLowerCase();
-
-  // 4) Έλεγχος λήξης (προαιρετικός αλλά καλός)
-  if (claims?.exp && Date.now() / 1000 > claims.exp) {
-    const loginUrl = new URL("/login", url.origin);
-    loginUrl.searchParams.set("redirectTo", url.pathname + url.search);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // 5) Άδεια μόνο αν email ∈ ADMIN_EMAILS
-  if (!email || !adminEmails.map(e => e.toLowerCase()).includes(email)) {
-    // 403 για μη-authorized logged-in χρήστες
+  if (!email || !adminEmails.map((e) => e.toLowerCase()).includes(email.toLowerCase())) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
   return NextResponse.next();
 }
+
+export const config = { matcher: ["/admin/:path*"] };
