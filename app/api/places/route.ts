@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sql } from "../../../lib/db";
-import { supabaseServer } from "../../../lib/supabase/server";
+import { sql } from "@/lib/db";
+import { supabaseServer } from "@/lib/supabase/server";
 
 function parseBbox(str: string) {
   const p = str.split(",").map(Number);
