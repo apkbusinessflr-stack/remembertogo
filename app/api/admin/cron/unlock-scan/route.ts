@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
-import { env } from "../../../../lib/env";
-import { sql } from "../../../../lib/db";
+import { env } from "@/lib/env";
+import { sql } from "@/lib/db";
 
 // απλή εξουσιοδότηση για cron: αν δεν έχεις CRON_SECRET -> επιτρέπεται (πρώτη φάση prod)
 function authorized(req: NextRequest) {
