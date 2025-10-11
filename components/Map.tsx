@@ -18,7 +18,7 @@ export default function Map({ center = [23.7275, 37.9838], zoom = 5 }: Props) {
 
   // Πάρε το token από το clientEnv
   const token = clientEnv.NEXT_PUBLIC_MAPTILER_KEY;
-
+ 
   useEffect(() => {
     // Αν δεν υπάρχει token, μην αρχικοποιείς, μόνο εμφάνισε μήνυμα
     if (!token) return;
