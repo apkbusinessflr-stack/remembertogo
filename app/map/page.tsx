@@ -1,6 +1,13 @@
 // app/map/page.tsx
 import Map from '@/components/Map';
-import type { Place } from '@/types/place';
+
+type Place = {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  visited?: boolean;
+};
 
 const demo: Place[] = [
   { id: '1', name: 'Athens Center',  lat: 37.9838, lng: 23.7275, visited: true },
