@@ -4,10 +4,9 @@ import { supabaseServer } from "@/lib/supabase/server";
 
 function parseBbox(str: string) {
   const p = str.split(",").map(Number);
-  if (p.length !== 4 || p.some((x) => Number.isNaN(x))) return null;
+  if (p.length !== 4 || p.some(Number.isNaN)) return null;
   const [w, s, e, n] = p;
-  if (!(w < e && s < n)) return null;
-  return [w, s, e, n] as const;
+  return (w < e && s < n) ? ([w, s, e, n] as const) : null;
 }
 
 export async function GET(req: NextRequest) {
@@ -33,13 +32,14 @@ export async function POST(req: NextRequest) {
   const { data } = await s.auth.getUser();
   if (!data.user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const body = await req.json().catch(() => ({}));
-  const required = ["kind","title","country_code","lat","lng"];
-  for (const k of required) if (!(k in body)) return NextResponse.json({ error: `missing ${k}` }, { status: 400 });
+  const b = await req.json().catch(() => ({}));
+  for (const k of ["kind", "title", "country_code", "lat", "lng"]) {
+    if (!(k in b)) return NextResponse.json({ error: `missing ${k}` }, { status: 400 });
+  }
 
   const rows = await sql`
     insert into places (owner, kind, title, description, country_code, lat, lng, is_public)
-    values (${data.user.id}::uuid, ${body.kind}, ${body.title}, ${body.desc ?? ""}, ${body.country_code}, ${body.lat}, ${body.lng}, ${body.is_public ?? true})
+    values (${data.user.id}::uuid, ${b.kind}, ${b.title}, ${b.desc ?? ""}, ${b.country_code}, ${b.lat}, ${b.lng}, ${b.is_public ?? true})
     returning id
   `;
   return NextResponse.json({ ok: true, id: rows[0].id });
