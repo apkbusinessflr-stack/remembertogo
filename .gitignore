@@ -1,0 +1,15 @@
+# Node/Next
+node_modules/
+.next/
+out/
+dist/
+.vercel/
+
+# Env & secrets
+.env*
+!.env.example
+
+# Misc
+.DS_Store
+npm-debug.log*
+yarn-error.log*
