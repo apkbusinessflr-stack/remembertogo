@@ -155,8 +155,8 @@ async function loadPlaces(map: MapLibreMap) {
       if (!f) return;
       const clusterId = (f.properties as any)["cluster_id"];
       src.getClusterExpansionZoom(clusterId, (err, zoom) => {
-        if (err) return;
-        const [x, y] = (f.geometry as any).coordinates;
+        if (err || typeof zoom !== "number") return; // ✅ guard για types
+        const [x, y] = (f.geometry as any).coordinates as [number, number];
         map.easeTo({ center: [x, y], zoom });
       });
     });
