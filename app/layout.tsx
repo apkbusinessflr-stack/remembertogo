@@ -1,11 +1,6 @@
 // app/layout.tsx
 import type { Metadata } from "next";
-
-// Αν έχεις το αρχείο μέσα στο app/, άφησε έτσι:
 import "./globals.css";
-
-// Αν ΚΡΑΤΑΣ το css στο /styles/globals.css, τότε χρησιμοποίησε αυτό αντί για την παραπάνω γραμμή:
-// import "../styles/globals.css";
 
 export const metadata: Metadata = {
   title: "RememberToGo",
