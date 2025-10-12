@@ -46,20 +46,20 @@ export const env: Env = {
   MAP_TOKEN: process.env.MAP_TOKEN,
 };
 
-// admin emails (lowercased)
+// Κατάλογος admin emails (lowercased)
 export const adminEmails: string[] = (env.ADMIN_EMAILS ?? "")
   .split(",")
   .map((s) => s.trim().toLowerCase())
   .filter(Boolean);
 
-// Public-only env για client
+// Ό,τι επιτρέπεται στον client (public)
 export const clientEnv = {
   NEXT_PUBLIC_SUPABASE_URL: env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   NEXT_PUBLIC_MAPTILER_KEY: env.NEXT_PUBLIC_MAPTILER_KEY,
 } as const;
 
-// Dev warnings (να μη μπλοκάρει)
+// Dev warnings για να μη μπλοκάρει
 if (!isProd && !env.NEXT_PUBLIC_MAPTILER_KEY) {
   console.warn("[env] Missing NEXT_PUBLIC_MAPTILER_KEY (dev)");
 }
