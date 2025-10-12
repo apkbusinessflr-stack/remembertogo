@@ -31,8 +31,9 @@ function decodeCursor(cursor: string | null): { createdAt: string; id: string } 
   }
 }
 
+// ✅ non-null assertion σε index όταν length > 0
 function safeLast<T>(arr: T[]): T | null {
-  return arr.length > 0 ? arr[arr.length - 1] : null;
+  return arr.length > 0 ? arr[arr.length - 1]! : null;
 }
 
 export async function listPublicPlaces(params: ListPlacesParams) {
@@ -52,7 +53,7 @@ export async function listPublicPlaces(params: ListPlacesParams) {
     where.push(sql`(created_at, id) < (${c.createdAt}::timestamptz, ${c.id})`);
   }
 
-  // Χωρίς generics για να αποφύγουμε type constraints του client
+  // Χωρίς generics/casts constraints
   const result = await (sql as any)`
     SELECT id, owner, title, description, country_code, lat, lng, is_public, created_at
     FROM places
