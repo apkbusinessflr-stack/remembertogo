@@ -9,9 +9,9 @@ const nowMs = () => Number(process.hrtime.bigint()) / 1e6;
 export async function GET() {
   const t0 = nowMs();
   try {
-    if (!process.env.DATABASE_URL) {
+    if (!process.env.DATABASE_URL)
       return NextResponse.json({ ok:false, error:"Missing DATABASE_URL" }, { status:500 });
-    }
+
     const sql = neon(process.env.DATABASE_URL);
 
     const t1 = nowMs(); await sql`select 1`; const db_ping = nowMs() - t1;
