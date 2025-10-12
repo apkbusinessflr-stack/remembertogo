@@ -1,7 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import "maplibre-gl/dist/maplibre-gl.css";
+import "../styles/globals.css";
 
 
 html, body, #__next { height: 100%; }
