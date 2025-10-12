@@ -1,22 +1,31 @@
-// lib/supabase/browser.ts
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { clientEnv } from "@/lib/env";
+// app/page.tsx
+"use client";
 
-/**
- * Browser-only Supabase client (χωρίς cookies).
- * Δεν ρίχνει error αν λείπουν envs — βάζει safe defaults.
- */
-export function supabaseBrowser(): SupabaseClient {
-  const url = clientEnv.NEXT_PUBLIC_SUPABASE_URL || "http://localhost";
-  const anon = clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY || "anon";
+import { useEffect, useState } from "react";
+import { supabaseBrowser } from "@/lib/supabase/browser";
 
-  return createClient(url, anon, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-    },
-    global: {
-      headers: { "X-Client-Info": "remembertogo/3" },
-    },
-  });
+export default function Home() {
+  const [status, setStatus] = useState("checking…");
+
+  useEffect(() => {
+    const s = supabaseBrowser();
+    s.auth
+      .getSession()
+      .then(() => setStatus("ready"))
+      .catch(() => setStatus("ready"));
+  }, []);
+
+  return (
+    <main className="space-y-4">
+      <h1 className="text-2xl font-semibold">RememberToGo v3 (minimal)</h1>
+      <p className="text-sm text-neutral-600">
+        Build-first skeleton. Αν λείπουν envs, η εφαρμογή εξακολουθεί να κάνει render.
+      </p>
+      <div className="rounded-xl border p-4">
+        <div className="text-sm">
+          Status: <span className="font-mono">{status}</span>
+        </div>
+      </div>
+    </main>
+  );
 }
