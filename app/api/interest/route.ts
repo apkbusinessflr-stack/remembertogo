@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "../../../lib/supabase/server";
-import { sql } from "../../../lib/db";
+import { supabaseServer } from "@/lib/supabase/server";
+import { sql } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   const s = supabaseServer();
