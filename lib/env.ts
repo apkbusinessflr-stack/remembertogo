@@ -11,11 +11,12 @@ type RequiredEnv = {
   ADMIN_EMAILS: string;
   SITE_URL: string;
 };
-/** Προαιρετικά (μπορεί να λείπουν) */
+
+/** Προαιρετικά (μπορεί να λείπουν) — με | undefined για exactOptionalPropertyTypes */
 type OptionalEnv = {
-  INTEREST_THRESHOLD?: string;     // e.g. "25"
-  INTEREST_WINDOW_DAYS?: string;   // e.g. "30"
-  MAP_TOKEN?: string;
+  INTEREST_THRESHOLD?: string | undefined;    // e.g. "25"
+  INTEREST_WINDOW_DAYS?: string | undefined;  // e.g. "30"
+  MAP_TOKEN?: string | undefined;
 };
 
 function requireEnv(name: keyof RequiredEnv): string {
@@ -24,7 +25,7 @@ function requireEnv(name: keyof RequiredEnv): string {
   return v;
 }
 
-// ΥΠΟΧΡΕΩΤΙΚΑ (με dev defaults για Preview/Local)
+// ΥΠΟΧΡΕΩΤΙΚΑ (με dev defaults για Preview)
 const required: RequiredEnv = {
   NEXT_PUBLIC_SUPABASE_URL: isProd
     ? requireEnv("NEXT_PUBLIC_SUPABASE_URL")
@@ -45,7 +46,7 @@ const required: RequiredEnv = {
   SITE_URL: process.env.SITE_URL ?? "http://localhost:3000",
 };
 
-// ΠΡΟΑΙΡΕΤΙΚΑ (ό,τι υπάρχει)
+// ΠΡΟΑΙΡΕΤΙΚΑ (βάζουμε την τιμή ΜΟΝΟ αν υπάρχει — τύπος string | undefined)
 const optional: OptionalEnv = {
   INTEREST_THRESHOLD: process.env.INTEREST_THRESHOLD,
   INTEREST_WINDOW_DAYS: process.env.INTEREST_WINDOW_DAYS,
@@ -55,13 +56,13 @@ const optional: OptionalEnv = {
 export type Env = RequiredEnv & OptionalEnv;
 export const env: Env = { ...required, ...optional };
 
-// 🔹 ΕΔΩ το export που έλειπε
+// Λίστα admin emails
 export const adminEmails: string[] = (env.ADMIN_EMAILS || "")
   .split(",")
-  .map(s => s.trim().toLowerCase())
+  .map((s) => s.trim().toLowerCase())
   .filter(Boolean);
 
-// Public envs για client
+// Public envs προς client
 export const clientEnv = {
   NEXT_PUBLIC_SUPABASE_URL: env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
