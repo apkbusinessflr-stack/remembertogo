@@ -1,25 +1,34 @@
 // middleware.ts
 import { NextResponse, type NextRequest } from "next/server";
-import { adminEmails } from "./lib/env";
+import { adminEmails } from "@/lib/env";
 
 /**
  * Lightweight JWT decode που δουλεύει στην Edge Runtime (χωρίς Node libs).
  * Δεν επαληθεύει υπογραφή — απλά διαβάζει claims για authorization gate.
  */
+f// Edge-safe Base64Url JSON decode (χωρίς Buffer)
 function decodeJwt<T = any>(jwt: string): T | null {
   try {
     const parts = jwt.split(".");
     if (parts.length !== 3) return null;
-    const payload = parts[1]
-      .replace(/-/g, "+")
-      .replace(/_/g, "/")
-      .padEnd(Math.ceil(parts[1].length / 4) * 4, "=");
-    const json = Buffer.from(payload, "base64").toString("utf8");
+
+    const b64url = parts[1];
+    const base = b64url.replace(/-/g, "+").replace(/_/g, "/");
+    const pad = "=".repeat((4 - (base.length % 4)) % 4);
+    const s = base + pad;
+
+    // atob: διαθέσιμο στην Edge Runtime (Web API)
+    const bin = atob(s);
+    // σωστό decode για utf-8
+    const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+    const json = new TextDecoder().decode(bytes);
+
     return JSON.parse(json) as T;
   } catch {
     return null;
   }
 }
+
 
 export const config = {
   matcher: ["/admin/:path*"], // φιλτράρουμε μόνο admin routes
