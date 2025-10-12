@@ -1,130 +1,151 @@
 // app/api/places/route.ts
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { sql } from "@/lib/db";
+import { z } from "zod";
 import { supabaseServer } from "@/lib/supabase/server";
 
-const MAX_LIMIT = 500;
-
-function inRange(n: number, a: number, b: number) {
-  return Number.isFinite(n) && n >= a && n <= b;
+/**
+ * Helpers: ασφαλές parsing & validation
+ */
+function parseNumber(v: string | null | undefined): number | null {
+  if (v == null) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+function inRange(n: number, min: number, max: number): boolean {
+  return n >= min && n <= max;
 }
 
-function parseBbox(str: string) {
-  const p = str.split(",").map((x) => Number(x.trim()));
-  if (p.length !== 4 || p.some((v) => Number.isNaN(v))) return null;
-  const [w, s, e, n] = p;
-  // γεωγραφικά όρια + w<e, s<n
+/**
+ * Δέχεται string[] (π.χ. από query "w,s,e,n") ή πιθανό tuple με undefined
+ * και επιστρέφει αυστηρό tuple [w,s,e,n] (numbers) ή null.
+ */
+function parseBBox(
+  p: [number?, number?, number?, number?] | string[] | null,
+): [number, number, number, number] | null {
+  if (!p) return null;
+
+  let vals: (number | null)[];
+
+  // Περίπτωση query string -> string[]
+  if (Array.isArray(p) && typeof p[0] === "string") {
+    vals = (p as string[]).map((x) => parseNumber(x));
+  } else {
+    // Περίπτωση tuple με πιθανά undefined
+    vals = (p as any[]).map((x) => (Number.isFinite(x) ? (x as number) : null));
+  }
+
+  if (vals.length !== 4 || vals.some((v) => v === null)) return null;
+
+  const [w, s, e, n] = vals as [number, number, number, number];
+
   if (!inRange(w, -180, 180) || !inRange(e, -180, 180)) return null;
   if (!inRange(s, -90, 90) || !inRange(n, -90, 90)) return null;
   if (!(w < e && s < n)) return null;
-  return [w, s, e, n] as const;
+
+  return [w, s, e, n];
 }
 
+/**
+ * Σχήμα εισόδου για POST /places
+ */
+const PlaceInput = z.object({
+  name: z.string().min(1).max(200),
+  country_code: z.string().min(2).max(2).toUpperCase(),
+  lat: z.number().gte(-90).lte(90),
+  lng: z.number().gte(-180).lte(180),
+  // optional fields αν υπάρχουν
+  description: z.string().max(1000).optional(),
+});
+
+/**
+ * GET /api/places?bbox=w,s,e,n
+ * Επιστρέφει σημεία εντός bbox (μέγιστο 500 για προστασία).
+ */
 export async function GET(req: NextRequest) {
   try {
-    const q = req.nextUrl.searchParams.get("bbox");
-    if (!q) return NextResponse.json({ error: "bbox required" }, { status: 400 });
+    const raw = (req.nextUrl.searchParams.get("bbox") ?? "")
+      .split(",")
+      .map((x) => x.trim())
+      .filter((x) => x.length > 0);
 
-    const bbox = parseBbox(q);
-    if (!bbox) return NextResponse.json({ error: "invalid bbox" }, { status: 400 });
-
-    const limitParam = Number(req.nextUrl.searchParams.get("limit") ?? MAX_LIMIT);
-    const limit = Number.isFinite(limitParam)
-      ? Math.max(1, Math.min(MAX_LIMIT, Math.floor(limitParam)))
-      : MAX_LIMIT;
+    const bbox = parseBBox(raw.length ? raw : null);
+    if (!bbox) {
+      return NextResponse.json(
+        { error: "invalid_bbox", hint: "expected ?bbox=w,s,e,n" },
+        { status: 400 },
+      );
+    }
 
     const [w, s, e, n] = bbox;
 
-    const rows = await sql`
-      select id, kind, title, country_code, lat, lng, created_at
-      from places
-      where lng between ${w} and ${e}
-        and lat between ${s} and ${n}
-        and is_public = true
-      order by created_at desc
-      limit ${limit}
+    // Προαιρετικό limit param (?limit=...)
+    const limitParam = req.nextUrl.searchParams.get("limit");
+    const limit = Math.max(
+      1,
+      Math.min(500, Number.isFinite(Number(limitParam)) ? Number(limitParam) : 100),
+    );
+
+    // Ασφαλές parametric query (Neon)
+    const rows = await sql/*sql*/`
+      SELECT id, name, country_code, lat, lng, description
+      FROM places
+      WHERE lng BETWEEN ${w} AND ${e}
+        AND lat BETWEEN ${s} AND ${n}
+      ORDER BY id DESC
+      LIMIT ${limit}
     `;
 
-    return NextResponse.json({ items: rows }, { status: 200 });
+    return NextResponse.json({ ok: true, count: rows.length, data: rows }, { status: 200 });
   } catch (err) {
-    console.error("[GET /api/places] failed:", err);
-    return NextResponse.json({ error: "internal error" }, { status: 500 });
+    console.error("GET /api/places error:", err);
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }
 
+/**
+ * POST /api/places
+ * Απαιτεί authenticated χρήστη (Supabase) και δημιουργεί σημείο.
+ */
 export async function POST(req: NextRequest) {
   try {
-    const s = supabaseServer();
-    const { data } = await s.auth.getUser();
-    if (!data?.user) {
+    // Auth (server-side supabase)
+    const sb = supabaseServer();
+    const { data: { user }, error } = await sb.auth.getUser();
+    if (error || !user) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
 
-    const body = (await req.json().catch(() => null)) as
-      | {
-          kind?: string;
-          title?: string;
-          desc?: string;
-          country_code?: string;
-          lat?: number;
-          lng?: number;
-          is_public?: boolean;
-        }
-      | null;
-
-    if (!body) {
-      return NextResponse.json({ error: "invalid json" }, { status: 400 });
+    // Body validation
+    const json = await req.json().catch(() => null);
+    const parsed = PlaceInput.safeParse(json);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "invalid_body", issues: parsed.error.flatten() },
+        { status: 400 },
+      );
     }
 
-    // Υποχρεωτικά πεδία
-    const missing = ["kind", "title", "country_code", "lat", "lng"].filter(
-      (k) => !(k in body!)
-    );
-    if (missing.length) {
-      return NextResponse.json({ error: `missing ${missing.join(",")}` }, { status: 400 });
-    }
+    const { name, country_code, lat, lng, description } = parsed.data;
 
-    // Canonicalization + validation
-    const kind = String(body.kind).trim(); // π.χ. "beach" | "hike" | ...
-    const title = String(body.title).trim();
-    const desc = String(body.desc ?? "").trim();
-    const country_code = String(body.country_code).trim().toUpperCase();
-    const lat = Number(body.lat);
-    const lng = Number(body.lng);
-    const is_public = body.is_public ?? true;
-
-    if (title.length < 1 || title.length > 100) {
-      return NextResponse.json({ error: "title length 1..100" }, { status: 400 });
-    }
-    if (desc.length > 500) {
-      return NextResponse.json({ error: "desc max 500 chars" }, { status: 400 });
-    }
-    if (!/^[A-Z]{2}$/.test(country_code)) {
-      return NextResponse.json({ error: "country_code must be ISO-3166-1 alpha-2" }, { status: 400 });
-    }
-    if (!inRange(lat, -90, 90) || !inRange(lng, -180, 180)) {
-      return NextResponse.json({ error: "invalid lat/lng" }, { status: 400 });
-    }
-
-    // Εισαγωγή
-    const rows = await sql`
-      insert into places (owner, kind, title, description, country_code, lat, lng, is_public)
-      values (
-        ${data.user.id}::uuid,
-        ${kind},
-        ${title},
-        ${desc},
-        ${country_code},
-        ${lat},
-        ${lng},
-        ${is_public}
-      )
-      returning id
+    // Εισαγωγή με επιστροφή
+    const rows = await sql/*sql*/`
+      INSERT INTO places (name, country_code, lat, lng, description, created_by)
+      VALUES (${name}, ${country_code}, ${lat}, ${lng}, ${description ?? null}, ${user.email ?? null})
+      RETURNING id, name, country_code, lat, lng, description
     `;
 
-    return NextResponse.json({ ok: true, id: rows[0].id }, { status: 201 });
+    return NextResponse.json({ ok: true, data: rows[0] }, { status: 201 });
   } catch (err) {
-    console.error("[POST /api/places] failed:", err);
-    return NextResponse.json({ error: "internal error" }, { status: 500 });
+    console.error("POST /api/places error:", err);
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }
+
+/**
+ * Next.js route options
+ * - Node runtime (ώστε Supabase server client/Neon να είναι άνετα)
+ * - Force dynamic για να μην “κολλήσει” σε static optimization
+ */
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
