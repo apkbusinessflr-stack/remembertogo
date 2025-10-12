@@ -31,13 +31,16 @@ function decodeCursor(cursor: string | null): { createdAt: string; id: string } 
   }
 }
 
+function safeLast<T>(arr: T[]): T | null {
+  return arr.length > 0 ? arr[arr.length - 1] : null;
+}
+
 export async function listPublicPlaces(params: ListPlacesParams) {
   const limit = Math.max(1, Math.min(params.limit ?? 50, 200));
   const c = decodeCursor(params.cursor ?? null);
   const country = params.country?.toUpperCase() ?? null;
   const bbox = params.bbox ?? null;
 
-  // Δυναμικό WHERE
   const where: any[] = [sql`is_public = true`];
   if (country) where.push(sql`country_code = ${country}`);
   if (bbox) {
@@ -46,7 +49,6 @@ export async function listPublicPlaces(params: ListPlacesParams) {
     where.push(sql`lng BETWEEN ${minLng} AND ${maxLng}`);
   }
   if (c) {
-    // keyset pagination (created_at,id)
     where.push(sql`(created_at, id) < (${c.createdAt}::timestamptz, ${c.id})`);
   }
 
@@ -60,14 +62,14 @@ export async function listPublicPlaces(params: ListPlacesParams) {
   `;
 
   const rows: PlaceRow[] = Array.isArray(result) ? (result as PlaceRow[]) : [];
-
-  // Ασφαλής κοπή + cursor χωρίς undefined
   const items: PlaceRow[] = rows.slice(0, Math.min(limit, rows.length));
-  let nextCursor: string | null = null;
 
+  let nextCursor: string | null = null;
   if (rows.length > limit) {
-    const last = items[items.length - 1]; // <-- guaranteed defined
-    nextCursor = Buffer.from(`${last.created_at}|${last.id}`, "utf8").toString("base64");
+    const last = safeLast(items);
+    if (last) {
+      nextCursor = Buffer.from(`${last.created_at}|${last.id}`, "utf8").toString("base64");
+    }
   }
 
   return { items, nextCursor };
