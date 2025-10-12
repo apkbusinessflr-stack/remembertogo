@@ -31,26 +31,29 @@ function decodeCursor(cursor: string | null): { createdAt: string; id: string } 
   }
 }
 
+// ✅ non-null assertion σε index όταν length > 0
+function safeLast<T>(arr: T[]): T | null {
+  return arr.length > 0 ? arr[arr.length - 1]! : null;
+}
+
 export async function listPublicPlaces(params: ListPlacesParams) {
   const limit = Math.max(1, Math.min(params.limit ?? 50, 200));
   const c = decodeCursor(params.cursor ?? null);
   const country = params.country?.toUpperCase() ?? null;
   const bbox = params.bbox ?? null;
 
-  // Δυναμικό WHERE (παραμετροποιημένο)
   const where: any[] = [sql`is_public = true`];
   if (country) where.push(sql`country_code = ${country}`);
   if (bbox) {
     const [minLng, minLat, maxLng, maxLat] = bbox;
-    where.push(sql`lat BETWEEN ${minLat} AND ${MaxLat(maxLat)}`);
-    where.push(sql`lng BETWEEN ${minLng} AND ${MaxLng(maxLng)}`);
+    where.push(sql`lat BETWEEN ${minLat} AND ${maxLat}`);
+    where.push(sql`lng BETWEEN ${minLng} AND ${maxLng}`);
   }
   if (c) {
-    // keyset pagination (created_at,id)
     where.push(sql`(created_at, id) < (${c.createdAt}::timestamptz, ${c.id})`);
   }
 
-  // Χωρίς generics/constraints για να μην “παλεύουμε” με τύπους του client
+  // Χωρίς generics/casts constraints
   const result = await (sql as any)`
     SELECT id, owner, title, description, country_code, lat, lng, is_public, created_at
     FROM places
@@ -60,25 +63,15 @@ export async function listPublicPlaces(params: ListPlacesParams) {
   `;
 
   const rows: PlaceRow[] = Array.isArray(result) ? (result as PlaceRow[]) : [];
-
-  // “Κόβουμε” με ασφάλεια
-  const itemsLen = Math.min(limit, rows.length);
-  const items: PlaceRow[] = rows.slice(0, itemsLen);
+  const items: PlaceRow[] = rows.slice(0, Math.min(limit, rows.length));
 
   let nextCursor: string | null = null;
-  const hasMore = rows.length > limit;
-  if (hasMore && items.length > 0) {
-    const last: PlaceRow = items[items.length - 1];
-    nextCursor = Buffer.from(`${last.created_at}|${last.id}`, "utf8").toString("base64");
+  if (rows.length > limit) {
+    const last = safeLast(items);
+    if (last) {
+      nextCursor = Buffer.from(`${last.created_at}|${last.id}`, "utf8").toString("base64");
+    }
   }
 
   return { items, nextCursor };
-}
-
-/** Helpers μόνο για να βοηθήσουν το TS σε exactOptionalPropertyTypes */
-function MaxLat(v: number): number {
-  return v;
-}
-function MaxLng(v: number): number {
-  return v;
 }
