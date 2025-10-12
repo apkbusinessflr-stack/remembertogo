@@ -37,8 +37,8 @@ export async function listPublicPlaces(params: ListPlacesParams) {
   const country = params.country?.toUpperCase() ?? null;
   const bbox = params.bbox ?? null;
 
-  // WHERE κομμάτια
-  const where = [sql`is_public = true`];
+  // Δυναμικό WHERE
+  const where: any[] = [sql`is_public = true`];
   if (country) where.push(sql`country_code = ${country}`);
   if (bbox) {
     const [minLng, minLat, maxLng, maxLat] = bbox;
@@ -50,17 +50,19 @@ export async function listPublicPlaces(params: ListPlacesParams) {
     where.push(sql`(created_at, id) < (${c.createdAt}::timestamptz, ${c.id})`);
   }
 
-  // ✅ ΣΩΣΤΟ generic: <PlaceRow> (όχι <PlaceRow[]>)
-  const rows = await sql<PlaceRow>`
+  // Χωρίς generics (typo-safe για όλους τους sql clients)
+  const result = await (sql as any)`
     SELECT id, owner, title, description, country_code, lat, lng, is_public, created_at
     FROM places
-    WHERE ${sql.join(where, sql` AND `)}
+    WHERE ${(sql as any).join(where, sql` AND `)}
     ORDER BY created_at DESC, id DESC
     LIMIT ${limit + 1}
   `;
 
+  const rows = (result as PlaceRow[]) ?? [];
   let nextCursor: string | null = null;
   let items = rows;
+
   if (rows.length > limit) {
     const last = rows[limit - 1];
     nextCursor = Buffer.from(`${last.created_at}|${last.id}`, "utf8").toString("base64");
