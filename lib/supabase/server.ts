@@ -3,15 +3,12 @@ import { cookies } from "next/headers";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { env } from "@/lib/env";
 
-// Δημιουργεί Supabase client για server components/route handlers
 export function createSupabaseServerClient() {
   const cookieStore = cookies();
-
   return createServerClient(
     env.NEXT_PUBLIC_SUPABASE_URL || "http://localhost",
     env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "anon",
     {
-      // ΝΕΟ: explicit cookie methods (όχι απλά passing το cookies())
       cookies: {
         get(name: string) {
           return cookieStore.get(name)?.value;
@@ -20,20 +17,21 @@ export function createSupabaseServerClient() {
           try {
             cookieStore.set({ name, value, ...options });
           } catch {
-            // σε RSC μπορεί να ρίξει αν τα headers έχουν σταλεί ήδη — αγνόησέ το
+            /* noop for RSC after headers sent */
           }
         },
         remove(name: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value: "", ...options, maxAge: 0 });
           } catch {
-            // same as above
+            /* noop */
           }
         },
       },
-      // αν χρειαστεί headers, πρόσθεσέ τα σε calls όπου τα θες, όχι εδώ
     }
   );
 }
 
+// ⬇️ Alias για συμβατότητα με υπάρχοντα imports
+export const supabaseServer = createSupabaseServerClient;
 export type SupabaseServerClient = ReturnType<typeof createSupabaseServerClient>;
