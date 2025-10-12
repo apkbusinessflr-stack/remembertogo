@@ -3,9 +3,7 @@ const isProd = process.env.NODE_ENV === "production";
 
 function requireEnv(name: string): string {
   const v = process.env[name];
-  if (!v || v.trim() === "") {
-    throw new Error(`Missing required env: ${name}`);
-  }
+  if (!v || v.trim() === "") throw new Error(`Missing required env: ${name}`);
   return v;
 }
 
@@ -17,10 +15,9 @@ export type Env = {
   CRON_SECRET: string;
   ADMIN_EMAILS: string;
   SITE_URL: string;
-  // optional (με defaults στον κώδικα που τα χρησιμοποιεί)
+  // optional (με defaults όπου χρησιμοποιούνται)
   INTEREST_THRESHOLD?: string;
   INTEREST_WINDOW_DAYS?: string;
-  // legacy/optional
   MAP_TOKEN?: string;
 };
 
@@ -37,8 +34,15 @@ export const env: Env = {
   MAP_TOKEN: process.env.MAP_TOKEN,
 };
 
-// Λίστα admin emails (χωρίς κενά, lowercased για ασφαλή σύγκριση)
+// Admin emails (lowercased για ασφαλή σύγκριση)
 export const adminEmails: string[] = (env.ADMIN_EMAILS ?? "")
   .split(",")
   .map((s) => s.trim().toLowerCase())
   .filter(Boolean);
+
+// Public-safe envs για client components
+export const clientEnv = {
+  NEXT_PUBLIC_SUPABASE_URL: env.NEXT_PUBLIC_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  NEXT_PUBLIC_MAPTILER_KEY: env.NEXT_PUBLIC_MAPTILER_KEY,
+} as const;
