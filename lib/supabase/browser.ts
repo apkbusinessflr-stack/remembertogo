@@ -8,3 +8,7 @@ export function createSupabaseBrowserClient() {
     env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "anon"
   );
 }
+
+// ⬇️ Alias για συμβατότητα με υπάρχοντα imports
+export const supabaseBrowser = createSupabaseBrowserClient;
+export type SupabaseBrowserClient = ReturnType<typeof createSupabaseBrowserClient>;
