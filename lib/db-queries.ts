@@ -50,7 +50,7 @@ export async function listPublicPlaces(params: ListPlacesParams) {
     where.push(sql`(created_at, id) < (${c.createdAt}::timestamptz, ${c.id})`);
   }
 
-  // Χωρίς generics (typo-safe για όλους τους sql clients)
+  // Χωρίς generics για να αποφύγουμε type constraints του client
   const result = await (sql as any)`
     SELECT id, owner, title, description, country_code, lat, lng, is_public, created_at
     FROM places
@@ -59,14 +59,15 @@ export async function listPublicPlaces(params: ListPlacesParams) {
     LIMIT ${limit + 1}
   `;
 
-  const rows = (result as PlaceRow[]) ?? [];
+  const rows: PlaceRow[] = Array.isArray(result) ? (result as PlaceRow[]) : [];
+
+  // Ασφαλής κοπή + cursor χωρίς undefined
+  const items: PlaceRow[] = rows.slice(0, Math.min(limit, rows.length));
   let nextCursor: string | null = null;
-  let items = rows;
 
   if (rows.length > limit) {
-    const last = rows[limit - 1];
+    const last = items[items.length - 1]; // <-- guaranteed defined
     nextCursor = Buffer.from(`${last.created_at}|${last.id}`, "utf8").toString("base64");
-    items = rows.slice(0, limit);
   }
 
   return { items, nextCursor };
