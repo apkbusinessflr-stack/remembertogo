@@ -37,8 +37,8 @@ export const env: Env = {
   MAP_TOKEN: process.env.MAP_TOKEN,
 };
 
-// λίστα admin emails (χωρίς κενά)
+// Λίστα admin emails (χωρίς κενά, lowercased για ασφαλή σύγκριση)
 export const adminEmails: string[] = (env.ADMIN_EMAILS ?? "")
   .split(",")
-  .map((s) => s.trim())
+  .map((s) => s.trim().toLowerCase())
   .filter(Boolean);

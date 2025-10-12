@@ -3,10 +3,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { adminEmails } from "@/lib/env";
 
 /**
- * Lightweight JWT decode που δουλεύει στην Edge Runtime (χωρίς Node libs).
- * Δεν επαληθεύει υπογραφή — απλά διαβάζει claims για authorization gate.
+ * Edge-safe JWT payload decode (χωρίς Buffer, δουλεύει στην Edge Runtime).
+ * Δεν επαληθεύει υπογραφή — διαβάζει μόνο claims για authorization gate.
  */
-f// Edge-safe Base64Url JSON decode (χωρίς Buffer)
 function decodeJwt<T = any>(jwt: string): T | null {
   try {
     const parts = jwt.split(".");
@@ -17,9 +16,7 @@ function decodeJwt<T = any>(jwt: string): T | null {
     const pad = "=".repeat((4 - (base.length % 4)) % 4);
     const s = base + pad;
 
-    // atob: διαθέσιμο στην Edge Runtime (Web API)
     const bin = atob(s);
-    // σωστό decode για utf-8
     const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
     const json = new TextDecoder().decode(bytes);
 
@@ -28,7 +25,6 @@ function decodeJwt<T = any>(jwt: string): T | null {
     return null;
   }
 }
-
 
 export const config = {
   matcher: ["/admin/:path*"], // φιλτράρουμε μόνο admin routes
@@ -42,11 +38,9 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2) Πάρε το Supabase access token cookie
-  //    (Supabase ορίζει "sb-access-token" για το session)
+  // 2) Πάρε το Supabase access token cookie ("sb-access-token")
   const access = req.cookies.get("sb-access-token")?.value;
   if (!access) {
-    // Not logged in -> redirect στο /login με redirect back
     const loginUrl = new URL("/login", url.origin);
     loginUrl.searchParams.set("redirectTo", url.pathname + url.search);
     return NextResponse.redirect(loginUrl);
@@ -57,7 +51,7 @@ export async function middleware(req: NextRequest) {
   const claims = decodeJwt<Claims>(access);
   const email = claims?.email?.toLowerCase();
 
-  // 4) Έλεγχος λήξης (προαιρετικός αλλά καλός)
+  // 4) Έλεγχος λήξης
   if (claims?.exp && Date.now() / 1000 > claims.exp) {
     const loginUrl = new URL("/login", url.origin);
     loginUrl.searchParams.set("redirectTo", url.pathname + url.search);
@@ -65,8 +59,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // 5) Άδεια μόνο αν email ∈ ADMIN_EMAILS
-  if (!email || !adminEmails.map(e => e.toLowerCase()).includes(email)) {
-    // 403 για μη-authorized logged-in χρήστες
+  if (!email || !adminEmails.includes(email)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
