@@ -1,4 +1,13 @@
+// app/api/health/route.ts
 import { NextResponse } from "next/server";
-export function GET() {
-  return NextResponse.json({ ok: true });
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  return NextResponse.json({
+    ok: true,
+    env: process.env.NODE_ENV,
+    ts: new Date().toISOString(),
+  });
 }
