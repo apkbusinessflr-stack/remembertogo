@@ -3,7 +3,7 @@ import "../styles/globals.css";
 
 export const metadata: Metadata = {
   title: "RememberToGo",
-  description: "Production starter with Next.js, Tailwind, MapLibre, Supabase and Neon."
+  description: "Production-ready map-first scaffold."
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
