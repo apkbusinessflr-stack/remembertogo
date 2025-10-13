@@ -4,12 +4,7 @@ const nextConfig = {
   reactStrictMode: true,
   images: { remotePatterns: [{ protocol: "https", hostname: "**.supabase.co" }] },
   async headers() {
-    return [
-      {
-        source: "/(.*)",
-        headers: [{ key: "Referrer-Policy", value: "strict-origin-when-cross-origin" }]
-      }
-    ];
+    return [{ source: "/(.*)", headers: [{ key: "Referrer-Policy", value: "strict-origin-when-cross-origin" }] }];
   },
   typescript: { ignoreBuildErrors: false },
   eslint: { ignoreDuringBuilds: false }
