@@ -17,8 +17,7 @@ function parseBBox(v: string | null): [number, number, number, number] | null {
   if (!v) return null;
   const parts = v.split(",").map((x) => Number(x.trim()));
   if (parts.length !== 4 || parts.some((n) => Number.isNaN(n))) return null;
-  const [minLng, minLat, maxLng, maxLat] =
-    parts as [number, number, number, number];
+  const [minLng, minLat, maxLng, maxLat] = parts as [number, number, number, number];
   if (minLng < -180 || maxLng > 180 || minLat < -90 || maxLat > 90) return null;
   if (minLng > maxLng || minLat > maxLat) return null;
   return [minLng, minLat, maxLng, maxLat];
