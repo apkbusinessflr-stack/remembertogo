@@ -1,4 +1,3 @@
-// next.config.mjs
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: { serverSourceMaps: true },
@@ -8,11 +7,11 @@ const nextConfig = {
     return [
       {
         source: "/(.*)",
-        headers: [{ key: "Referrer-Policy", value: "strict-origin-when-cross-origin" }],
-      },
+        headers: [{ key: "Referrer-Policy", value: "strict-origin-when-cross-origin" }]
+      }
     ];
   },
   typescript: { ignoreBuildErrors: false },
-  eslint: { ignoreDuringBuilds: false },
+  eslint: { ignoreDuringBuilds: false }
 };
 export default nextConfig;
