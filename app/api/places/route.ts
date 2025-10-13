@@ -30,7 +30,7 @@ export async function GET(req: Request) {
 
   if (!allow(ip, 60, 1)) {
     return NextResponse.json({ ok: false, error: "rate_limited" }, { status: 429 });
-  }
+    }
 
   const limit = Math.max(1, Math.min(Number(url.searchParams.get("limit") ?? 50), 200));
   const country = url.searchParams.get("country");
