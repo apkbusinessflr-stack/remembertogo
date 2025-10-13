@@ -1,4 +1,3 @@
-// app/api/places/route.ts
 import { NextResponse } from "next/server";
 import { listPublicPlaces } from "@/lib/db-queries";
 import { allow } from "@/lib/rate";
@@ -13,7 +12,6 @@ function getIP(req: Request): string {
   if (xr && xr.length > 0) return xr.trim();
   return "anon";
 }
-
 function parseBBox(v: string | null): [number, number, number, number] | null {
   if (!v) return null;
   const parts = v.split(",").map((x) => Number(x.trim()));
@@ -23,14 +21,10 @@ function parseBBox(v: string | null): [number, number, number, number] | null {
   if (minLng > maxLng || minLat > maxLat) return null;
   return [minLng, minLat, maxLng, maxLat];
 }
-
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const ip = getIP(req);
-
-  if (!allow(ip, 60, 1)) {
-    return NextResponse.json({ ok: false, error: "rate_limited" }, { status: 429 });
-    }
+  if (!allow(ip, 60, 1)) return NextResponse.json({ ok: false, error: "rate_limited" }, { status: 429 });
 
   const limit = Math.max(1, Math.min(Number(url.searchParams.get("limit") ?? 50), 200));
   const country = url.searchParams.get("country");
@@ -42,9 +36,6 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: true, count: items.length, nextCursor, items });
   } catch (err: any) {
     console.error("[api/places] failed", err);
-    return NextResponse.json(
-      { ok: false, error: "SERVER_ERROR", message: String(err?.message || err) },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: false, error: "SERVER_ERROR", message: String(err?.message || err) }, { status: 500 });
   }
 }
