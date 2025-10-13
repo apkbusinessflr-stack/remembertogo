@@ -10,14 +10,14 @@ export type PlaceRow = {
   lat: number;
   lng: number;
   is_public: boolean;
-  created_at: string;
+  created_at: string; // ISO
 };
 
 export type ListPlacesParams = {
   country?: string | null;
-  limit?: number;
-  cursor?: string | null;
-  bbox?: [number, number, number, number] | null;
+  limit?: number; // 1..200
+  cursor?: string | null; // base64("<iso>|<id>")
+  bbox?: [number, number, number, number] | null; // [minLng,minLat,maxLng,maxLat]
 };
 
 function decodeCursor(cursor: string | null): { createdAt: string; id: string } | null {
