@@ -1,17 +1,14 @@
-// lib/rate.ts
-const buckets = new Map<string, { tokens: number; ts: number }>();
+// In-memory token bucket per IP (serverless-safe enough για απλά APIs).
+const buckets = new Map<string, { tokens: number; last: number }>();
 
-export function allow(ip: string, capacity = 60, refillPerSec = 1) {
+export function allow(ip: string, capacity: number, perSecond: number): boolean {
   const now = Date.now();
-  const b = buckets.get(ip) ?? { tokens: capacity, ts: now };
-
-  // refill με βάση τα δευτερόλεπτα που πέρασαν
-  const refill = Math.floor((now - b.ts) / 1000) * refillPerSec;
+  const b = buckets.get(ip) ?? { tokens: capacity, last: now };
+  const refill = ((now - b.last) / 1000) * perSecond;
   b.tokens = Math.min(capacity, b.tokens + refill);
-  b.ts = now;
-
-  if (b.tokens <= 0) return false;
-  b.tokens--;
+  b.last = now;
+  if (b.tokens < 1) { buckets.set(ip, b); return false; }
+  b.tokens -= 1;
   buckets.set(ip, b);
   return true;
 }
