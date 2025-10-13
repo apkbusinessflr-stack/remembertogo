@@ -1,7 +1,5 @@
-// lib/env.ts
 const isProd = process.env.NODE_ENV === "production";
 
-/** Υποχρεωτικά env για να “σταθεί” το app */
 type RequiredEnv = {
   NEXT_PUBLIC_SUPABASE_URL: string;
   NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
@@ -12,10 +10,9 @@ type RequiredEnv = {
   SITE_URL: string;
 };
 
-/** Προαιρετικά (μπορεί να λείπουν) — με | undefined για exactOptionalPropertyTypes */
 type OptionalEnv = {
-  INTEREST_THRESHOLD?: string | undefined;    // e.g. "25"
-  INTEREST_WINDOW_DAYS?: string | undefined;  // e.g. "30"
+  INTEREST_THRESHOLD?: string | undefined;
+  INTEREST_WINDOW_DAYS?: string | undefined;
   MAP_TOKEN?: string | undefined;
 };
 
@@ -25,50 +22,32 @@ function requireEnv(name: keyof RequiredEnv): string {
   return v;
 }
 
-// ΥΠΟΧΡΕΩΤΙΚΑ (με dev defaults για Preview)
 const required: RequiredEnv = {
-  NEXT_PUBLIC_SUPABASE_URL: isProd
-    ? requireEnv("NEXT_PUBLIC_SUPABASE_URL")
-    : (process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: isProd
-    ? requireEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-    : (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""),
-  NEXT_PUBLIC_MAPTILER_KEY: isProd
-    ? requireEnv("NEXT_PUBLIC_MAPTILER_KEY")
-    : (process.env.NEXT_PUBLIC_MAPTILER_KEY ?? ""),
-  DATABASE_URL: isProd
-    ? requireEnv("DATABASE_URL")
-    : (process.env.DATABASE_URL ?? ""),
-  CRON_SECRET: isProd
-    ? requireEnv("CRON_SECRET")
-    : (process.env.CRON_SECRET ?? "dev-cron"),
+  NEXT_PUBLIC_SUPABASE_URL: isProd ? requireEnv("NEXT_PUBLIC_SUPABASE_URL") : (process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: isProd ? requireEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY") : (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""),
+  NEXT_PUBLIC_MAPTILER_KEY: isProd ? requireEnv("NEXT_PUBLIC_MAPTILER_KEY") : (process.env.NEXT_PUBLIC_MAPTILER_KEY ?? ""),
+  DATABASE_URL: isProd ? requireEnv("DATABASE_URL") : (process.env.DATABASE_URL ?? ""),
+  CRON_SECRET: isProd ? requireEnv("CRON_SECRET") : (process.env.CRON_SECRET ?? "dev-cron"),
   ADMIN_EMAILS: process.env.ADMIN_EMAILS ?? "",
-  SITE_URL: process.env.SITE_URL ?? "http://localhost:3000",
+  SITE_URL: process.env.SITE_URL ?? "http://localhost:3000"
 };
 
-// ΠΡΟΑΙΡΕΤΙΚΑ (βάζουμε την τιμή ΜΟΝΟ αν υπάρχει — τύπος string | undefined)
 const optional: OptionalEnv = {
   INTEREST_THRESHOLD: process.env.INTEREST_THRESHOLD,
   INTEREST_WINDOW_DAYS: process.env.INTEREST_WINDOW_DAYS,
-  MAP_TOKEN: process.env.MAP_TOKEN,
+  MAP_TOKEN: process.env.MAP_TOKEN
 };
 
 export type Env = RequiredEnv & OptionalEnv;
 export const env: Env = { ...required, ...optional };
 
-// Λίστα admin emails
 export const adminEmails: string[] = (env.ADMIN_EMAILS || "")
   .split(",")
-  .map((s) => s.trim().toLowerCase())
+  .map(s => s.trim().toLowerCase())
   .filter(Boolean);
 
-// Public envs προς client
 export const clientEnv = {
   NEXT_PUBLIC_SUPABASE_URL: env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  NEXT_PUBLIC_MAPTILER_KEY: env.NEXT_PUBLIC_MAPTILER_KEY,
+  NEXT_PUBLIC_MAPTILER_KEY: env.NEXT_PUBLIC_MAPTILER_KEY
 } as const;
-
-// Προειδοποιήσεις dev (δεν μπλοκάρουν build)
-if (!isProd && !env.NEXT_PUBLIC_MAPTILER_KEY) console.warn("[env] Missing NEXT_PUBLIC_MAPTILER_KEY (dev)");
-if (!isProd && !env.DATABASE_URL) console.warn("[env] Missing DATABASE_URL (dev)");
