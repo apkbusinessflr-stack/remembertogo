@@ -1,3 +1,4 @@
+// lib/db-queries.ts
 import { sql } from "@/lib/db";
 
 export type PlaceRow = {
@@ -55,8 +56,8 @@ export async function listPublicPlaces(params: ListPlacesParams) {
 
   const rows: PlaceRow[] = Array.isArray(result) ? (result as PlaceRow[]) : [];
   const items = rows.slice(0, Math.min(limit, rows.length));
-  let nextCursor: string | null = null;
 
+  let nextCursor: string | null = null;
   if (rows.length > limit && items.length > 0) {
     const last = items[items.length - 1]!;
     nextCursor = Buffer.from(`${last.created_at}|${last.id}`, "utf8").toString("base64");
