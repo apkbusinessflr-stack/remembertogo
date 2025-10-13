@@ -1,25 +1,6 @@
-/* styles/globals.css */
-
-/* Tailwind layers */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Προαιρετικά global resets/vars */
-:root {
-  --bg: #fafafa;
-  --fg: #111;
-}
-
-html, body {
-  min-height: 100%;
-  background: var(--bg);
-  color: var(--fg);
-}
-
-/* Προαιρετικά helpers */
-.container {
-  max-width: 64rem; /* ~1024px */
-  margin: 0 auto;
-  padding: 1.5rem;
-}
+:root{ --bg:#fafafa; --fg:#111; }
+html,body{ min-height:100%; background:var(--bg); color:var(--fg); }
