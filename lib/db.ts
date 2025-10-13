@@ -1,9 +1,9 @@
-// lib/db.ts
-import { neon } from "@neondatabase/serverless";
+import postgres from "postgres";
+import { env } from "@/lib/env";
 
-// Ασφαλές: κόψε αμέσως αν λείπει URL
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is missing");
-}
-
-export const sql = neon(process.env.DATABASE_URL);
+// Neon serverless-friendly client
+export const sql = postgres(env.DATABASE_URL, {
+  ssl: "require",
+  max: 1,          // serverless: μικρό pool
+  prepare: true    // βελτιώνει repeated queries
+});
