@@ -1,4 +1,4 @@
-// In-memory token bucket per IP (serverless-safe enough για απλά APIs).
+// lib/rate.ts
 const buckets = new Map<string, { tokens: number; last: number }>();
 
 export function allow(ip: string, capacity: number, perSecond: number): boolean {
