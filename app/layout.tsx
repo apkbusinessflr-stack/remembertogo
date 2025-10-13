@@ -1,6 +1,5 @@
-// app/layout.tsx
 import type { Metadata } from "next";
-import "../styles/globals.css"; // ✅ σωστό αν ο φάκελος είναι /app και /styles στο root
+import "../styles/globals.css";
 
 export const metadata: Metadata = {
   title: "RememberToGo",
