@@ -1,3 +1,4 @@
+// app/api/places/route.ts
 import { NextResponse } from "next/server";
 import { listPublicPlaces } from "@/lib/db-queries";
 import { allow } from "@/lib/rate";
@@ -26,6 +27,7 @@ function parseBBox(v: string | null): [number, number, number, number] | null {
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const ip = getIP(req);
+
   if (!allow(ip, 60, 1)) {
     return NextResponse.json({ ok: false, error: "rate_limited" }, { status: 429 });
   }
