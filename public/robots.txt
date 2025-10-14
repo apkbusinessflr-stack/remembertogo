@@ -8,11 +8,11 @@ Allow: /
 # Default rules
 User-agent: *
 Allow: /
-# (Προαιρετικό) μην ανιχνεύεις API endpoints
+# Optional: avoid crawling API endpoints
 Disallow: /api/
 
-# Sitemaps (χρησιμοποίησε το canonical domain σου)
-Sitemap: https://YOUR-CANONICAL-DOMAIN/sitemap.xml
-Sitemap: https://YOUR-CANONICAL-DOMAIN/sitemaps/lists
-Sitemap: https://YOUR-CANONICAL-DOMAIN/sitemaps/places
-Sitemap: https://YOUR-CANONICAL-DOMAIN/sitemaps/countries
+# Sitemaps (canonical, no www)
+Sitemap: https://remembertogo.vercel.app/sitemap.xml
+Sitemap: https://remembertogo.vercel.app/sitemaps/lists
+Sitemap: https://remembertogo.vercel.app/sitemaps/places
+Sitemap: https://remembertogo.vercel.app/sitemaps/countries
