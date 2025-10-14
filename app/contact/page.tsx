@@ -1,22 +1,12 @@
-'use client';
-import { useState } from 'react';
+// app/contact/page.tsx
 export const metadata = { title: "Contact" };
-export default function Contact() {
-  const [email,setEmail] = useState('');
-  const [msg,setMsg] = useState('');
-  function mailtoHref(){
-    const subject = encodeURIComponent('Support request from '+(email||'guest'));
-    const body = encodeURIComponent(msg);
-    return `mailto:support@mappamou.example?subject=${subject}&body=${body}`;
-  }
+import ContactForm from "./ContactForm";
+
+export default function Page() {
   return (
     <main className="space-y-4">
       <h1>Contact</h1>
-      <div className="space-y-2">
-        <input className="input" placeholder="Your email (optional)" value={email} onChange={e=>setEmail(e.target.value)} />
-        <textarea className="input h-32" placeholder="How can we help?" value={msg} onChange={e=>setMsg(e.target.value)} />
-        <a className="btn" href={mailtoHref()}>Send Email</a>
-      </div>
+      <ContactForm />
     </main>
   );
 }
