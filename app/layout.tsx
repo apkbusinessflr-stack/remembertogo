@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import Script from "next/script";
 import ConsentBanner from "@/components/ConsentBanner";
 
 export const metadata: Metadata = {
@@ -10,9 +11,21 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const adsenseClient = process.env.NEXT_PUBLIC_ADSENSE_CLIENT; // π.χ. "ca-pub-1234567890123456"
+
   return (
     <html lang="en">
       <body>
+        {/* Φόρτωσε το AdSense script ΜΟΝΟ αν έχεις client id */}
+        {adsenseClient ? (
+          <Script
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5077568341465757`}
+            crossOrigin="anonymous"
+            strategy="afterInteractive"
+          />
+        ) : null}
+
         <div className="container py-6">
           <header className="flex items-center justify-between mb-6">
             <a className="text-xl font-bold" href="/">
