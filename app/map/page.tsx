@@ -1,12 +1,2 @@
-export const dynamic = "force-dynamic"; // προαιρετικό, για να μη cache-άρει στο build
-
-import Map from "@/components/Map";
-
-export default function MapPage() {
-  return (
-    <main className="space-y-4">
-      <h1 className="text-xl font-semibold">Map</h1>
-      <Map center={[23.7275, 37.9838]} zoom={5} />
-    </main>
-  );
-}
+import Map from "@/components/Map"; import { places } from "@/lib/db";
+export default function MyMap(){ return (<main className="space-y-6"><h1>My Map</h1><div className="card"><Map places={places.map(p=>({id:p.id,name:p.name,lat:p.lat,lng:p.lng,visited:Math.random()>0.5}))} /></div></main>); }

@@ -1,59 +1,17 @@
-"use client";
-
-import { useEffect, useRef, useState } from "react";
-import type { Map as MapLibreMap } from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
-import * as maplibregl from "maplibre-gl";
-import { clientEnv } from "@/lib/env";
-
-type Props = {
-  center?: [number, number]; // [lng, lat]
-  zoom?: number;
-};
-
-export default function Map({ center = [23.7275, 37.9838], zoom = 10 }: Props) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<MapLibreMap | null>(null);
-  const [ready, setReady] = useState(false);
-
-  const token = clientEnv.NEXT_PUBLIC_MAPTILER_KEY;
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    if (!token) return;
-
-    const styleUrl = `https://api.maptiler.com/maps/streets/style.json?key=${token}`;
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: styleUrl,
-      center,
-      zoom,
-      attributionControl: true,
+'use client'; import maplibregl from 'maplibre-gl'; import 'maplibre-gl/dist/maplibre-gl.css'; import { useEffect, useRef } from 'react';
+type Place={id:number;name:string;lat:number;lng:number;visited?:boolean;};
+export default function Map({ places, center=[-9.1,38.7], zoom=6 }:{ places:Place[]; center?:[number,number]; zoom?:number; }){
+  const ref=useRef<HTMLDivElement>(null);
+  useEffect(()=>{ if(!ref.current) return;
+    const map=new maplibregl.Map({ container:ref.current, style:'https://demotiles.maplibre.org/style.json', center, zoom });
+    map.addControl(new maplibregl.NavigationControl({visualizePitch:true}));
+    map.on('load',()=>{
+      map.addSource('places',{ type:'geojson', data:{ type:'FeatureCollection', features:places.map(p=>({
+        type:'Feature', geometry:{ type:'Point', coordinates:[p.lng,p.lat] }, properties:{ id:p.id, name:p.name, visited:!!p.visited }
+      }))}});
+      map.addLayer({ id:'places', type:'circle', source:'places', paint:{ 'circle-radius':5, 'circle-color':['case',['==',['get','visited'],true],'#34d399','#60a5fa'], 'circle-stroke-color':'#0b1020','circle-stroke-width':1 }});
     });
-
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
-    map.on("load", () => setReady(true));
-    map.on("error", (e) => console.error("[map] error", e?.error ?? e));
-
-    mapRef.current = map;
-    return () => {
-      mapRef.current?.remove();
-      mapRef.current = null;
-    };
-  }, [center[0], center[1], zoom, token]); // σταθερά deps
-
-  if (!token) {
-    return (
-      <div className="rounded-xl border p-4 bg-yellow-50 text-yellow-800">
-        Λείπει το <code>NEXT_PUBLIC_MAPTILER_KEY</code>. Βάλ’το στο Vercel (Preview/Production) και κάνε redeploy.
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2">
-      <div ref={containerRef} className="h-[70vh] w-full rounded-xl overflow-hidden border" />
-      <div className="text-xs text-neutral-500">{ready ? "Map ready" : "Loading map…"}</div>
-    </div>
-  );
+    return ()=>map.remove();
+  },[places,center.toString(),zoom]);
+  return <div ref={ref} className="w-full h-[420px] rounded-2xl overflow-hidden border border-white/10" />;
 }

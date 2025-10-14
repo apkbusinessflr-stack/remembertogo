@@ -1,0 +1,1 @@
+import { NextResponse } from "next/server"; import { z } from "zod"; const schema=z.object({ user_id:z.string() }); export async function POST(req:Request){ const json=await req.json().catch(()=>null); const p=schema.safeParse(json); if(!p.success) return NextResponse.json({ error:p.error.flatten() },{status:400}); return NextResponse.json({ ok:true }); }
