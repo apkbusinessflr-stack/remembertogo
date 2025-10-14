@@ -1,0 +1,8 @@
+@tailwind base; @tailwind components; @tailwind utilities;
+:root { --bg:#0b1020; --fg:#e6f0ff; } html,body{height:100%} body{color:var(--fg);background:linear-gradient(180deg,#0b1020,#0f1a3a)}
+.container{max-width:72rem;margin:0 auto;padding:0 1rem}
+.card{border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);backdrop-filter:blur(8px);padding:1rem;border-radius:1rem}
+.btn{display:inline-flex;gap:.5rem;align-items:center;padding:.5rem 1rem;border-radius:.75rem;background:rgba(255,255,255,.1)}
+.input{width:100%;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);border-radius:.75rem;padding:.5rem 0.75rem;color:var(--fg)}
+.badge{display:inline-flex;gap:.25rem;padding:.25rem .5rem;border-radius:999px;background:rgba(255,255,255,.08);font-size:.75rem}
+h1{font-size:1.875rem;line-height:2.25rem;font-weight:600} h3{font-weight:600}

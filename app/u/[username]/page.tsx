@@ -1,0 +1,1 @@
+export default function Profile({ params }:{ params:{ username:string }}){ return (<main className="space-y-6"><h1>@{params.username}</h1><div className="grid md:grid-cols-3 gap-4"><div className="card">Visited: 23</div><div className="card">Tips: 4</div><div className="card">Followers: 12</div></div></main>); }
