@@ -1,0 +1,12 @@
+export const metadata = { title: "Cookie & Ads Policy" };
+export default function Cookies() {
+  return (
+    <main className="space-y-4">
+      <h1>Cookie & Ads Policy</h1>
+      <h3>Types</h3>
+      <p>Essential (security), Analytics (aggregated), Advertising (AdSense). You can opt for Non-Personalized Ads.</p>
+      <h3>Manage Preferences</h3>
+      <p>Use the consent banner or clear cookies to re-prompt. Browser-level ad personalization can be disabled as well.</p>
+    </main>
+  );
+}
