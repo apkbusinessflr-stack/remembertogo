@@ -1,0 +1,14 @@
+export const metadata = { title: "Licensing & Attributions" };
+export default function Licensing() {
+  return (
+    <main className="space-y-4">
+      <h1>Licensing & Attributions</h1>
+      <h3>Maps</h3>
+      <p>© OpenStreetMap contributors. MapLibre GL JS used under BSD-style license.</p>
+      <h3>Images</h3>
+      <p>User-submitted images remain property of their authors under the Terms.</p>
+      <h3>Third-party</h3>
+      <p>Other trademarks are property of their respective owners.</p>
+    </main>
+  );
+}
