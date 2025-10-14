@@ -1,1 +1,15 @@
-import type { MetadataRoute } from "next"; export default function sitemap():MetadataRoute.Sitemap{ const b=process.env.NEXT_PUBLIC_SITE_URL||"http://localhost:3000"; const urls=["","/lists/portugal-beaches","/place/praia-da-urca","/map","/feed"]; return urls.map(u=>({ url:b+u, lastModified:new Date(), changeFrequency:"weekly", priority:u===""?1:0.7 })); }
+// app/sitemap.ts
+import type { MetadataRoute } from "next";
+
+export default function sitemap(): MetadataRoute.Sitemap {
+  const base = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/+$/, "");
+  const paths = ["/", "/lists/portugal-beaches", "/place/praia-da-urca", "/map", "/feed"];
+  const lastModified = new Date();
+
+  return paths.map((p) => ({
+    url: `${base}${p}`,
+    lastModified,
+    changeFrequency: "weekly",
+    priority: p === "/" ? 1 : 0.7,
+  }));
+}
