@@ -1,6 +1,8 @@
 // app/report/page.tsx
-export const metadata = { title: "Report Abuse" };
+import type { Metadata } from "next";
 import ReportForm from "./ReportForm";
+
+export const metadata: Metadata = { title: "Report Abuse • remembertogo" };
 
 export default function Page() {
   return (
