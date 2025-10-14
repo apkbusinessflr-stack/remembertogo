@@ -1,1 +1,0 @@
-export default function Feed(){ const items=[{type:'visited',user:'alex',text:'visited Praia da Ursa'},{type:'new_tip',user:'maria',text:'added a tip on Praia da Marinha'}]; return (<main className="space-y-6"><h1>Feed</h1><div className="space-y-3">{items.map((it,i)=>(<div key={i} className="card text-sm">{it.user} — {it.text}</div>))}</div></main>); }
