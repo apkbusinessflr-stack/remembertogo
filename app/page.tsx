@@ -1,3 +1,4 @@
+// app/page.tsx
 import Link from "next/link";
 
 export default function Home() {
@@ -9,17 +10,17 @@ export default function Home() {
           Track your travels — share your <span className="badge">global map</span>
         </h1>
         <p className="mt-2 opacity-80">
-          Mark beaches, hikes, waterfalls & viewpoints. Light social, auto ads.
+          Mark beaches, hikes, waterfalls & viewpoints. Build and share your travel map.
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Link className="btn" href="/lists/portugal-beaches">
-            Explore demo list
+            Explore Portugal beaches
           </Link>
           <Link className="btn" href="/map">
-            Open My Map
+            Open your map
           </Link>
           <Link className="btn" href="/feed">
-            Community Feed
+            Community feed
           </Link>
         </div>
       </section>
@@ -54,14 +55,14 @@ export default function Home() {
       {/* CTA strip */}
       <section className="card flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div className="text-sm opacity-90">
-          Ready to build your map? Start with the Portugal demo or jump to your map.
+          Ready to build your map? Start with Portugal beaches or jump straight to your map.
         </div>
         <div className="flex flex-wrap gap-2">
           <Link className="btn" href="/lists/portugal-beaches">
-            Start with a demo
+            Explore Portugal beaches
           </Link>
           <Link className="btn" href="/map">
-            Go to My Map
+            Open your map
           </Link>
         </div>
       </section>
