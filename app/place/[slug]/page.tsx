@@ -1,4 +1,6 @@
-import Map from "@/components/Map";
+// app/place/[slug]/page.tsx
+import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import TipComposer from "@/components/TipComposer";
 import TipList from "@/components/TipList";
 import PhotoGrid from "@/components/PhotoGrid";
@@ -6,7 +8,20 @@ import { getPlace } from "@/lib/db";
 import { placeSchema } from "@/lib/seo";
 import { notFound } from "next/navigation";
 
-export default function PlacePage({ params }: { params: { slug: string } }) {
+const Map = dynamic(() => import("@/components/Map"), { ssr: false });
+
+type Props = { params: { slug: string } };
+
+export function generateMetadata({ params }: Props): Metadata {
+  const place = getPlace(params.slug);
+  if (!place) return { title: "Place not found • remembertogo" };
+  return {
+    title: `${place.name} • remembertogo`,
+    description: `Discover ${place.name} in ${place.country} on remembertogo.`,
+  };
+}
+
+export default function PlacePage({ params }: Props) {
   const place = getPlace(params.slug);
   if (!place) return notFound();
 
@@ -19,6 +34,7 @@ export default function PlacePage({ params }: { params: { slug: string } }) {
         suppressHydrationWarning
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
       />
+
       <div className="flex items-center justify-between">
         <h1>{place.name}</h1>
         <div className="badge">{place.country}</div>
