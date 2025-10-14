@@ -1,0 +1,1 @@
+export default function NotFound(){ return (<main className="container py-16 text-center"><h1 className="text-3xl font-semibold mb-2">Page not found</h1><p className="opacity-70 mb-6">The page you’re looking for doesn’t exist.</p><a className="btn" href="/">Go Home</a></main>); }

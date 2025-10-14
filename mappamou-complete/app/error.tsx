@@ -1,0 +1,1 @@
+'use client'; export default function Error({ error, reset }: { error: Error; reset: () => void }){ return (<main className="container py-16 text-center"><h1 className="text-3xl font-semibold mb-2">Something went wrong</h1><p className="opacity-70 mb-6">{error.message || 'Please try again.'}</p><button className="btn" onClick={()=>reset()}>Try again</button></main>); }

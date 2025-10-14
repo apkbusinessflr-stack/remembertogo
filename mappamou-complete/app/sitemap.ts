@@ -1,0 +1,1 @@
+import type { MetadataRoute } from "next"; export default function sitemap():MetadataRoute.Sitemap{ const b=process.env.NEXT_PUBLIC_SITE_URL||"http://localhost:3000"; const urls=["","/lists/portugal-beaches","/place/praia-da-urca","/map","/feed","/countries"]; return urls.map(u=>({ url:b+u, lastModified:new Date(), changeFrequency:"weekly", priority:u===""?1:0.7 })); }
