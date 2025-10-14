@@ -1,3 +1,18 @@
-User-agent: * 
+# Allow AdSense & ads crawler
+User-agent: Mediapartners-Google
 Allow: /
-Sitemap: /sitemap.xml
+
+User-agent: AdsBot-Google
+Allow: /
+
+# Default rules
+User-agent: *
+Allow: /
+# (Προαιρετικό) μην ανιχνεύεις API endpoints
+Disallow: /api/
+
+# Sitemaps (χρησιμοποίησε το canonical domain σου)
+Sitemap: https://YOUR-CANONICAL-DOMAIN/sitemap.xml
+Sitemap: https://YOUR-CANONICAL-DOMAIN/sitemaps/lists
+Sitemap: https://YOUR-CANONICAL-DOMAIN/sitemaps/places
+Sitemap: https://YOUR-CANONICAL-DOMAIN/sitemaps/countries
