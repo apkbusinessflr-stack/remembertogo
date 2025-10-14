@@ -1,6 +1,8 @@
 // app/contact/page.tsx
-export const metadata = { title: "Contact" };
+import type { Metadata } from "next";
 import ContactForm from "./ContactForm";
+
+export const metadata: Metadata = { title: "Contact • remembertogo" };
 
 export default function Page() {
   return (
