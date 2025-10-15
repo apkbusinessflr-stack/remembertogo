@@ -13,14 +13,8 @@ const ServerSchema = z.object({
 });
 
 const ClientSchema = z.object({
-  NEXT_PUBLIC_SITE_URL: z
-    .string()
-    .url()
-    .optional(), // e.g. https://remembertogo.com (no trailing slash preferred)
-  NEXT_PUBLIC_ADSENSE_CLIENT: z
-    .string()
-    .regex(/^ca-pub-\d+$/)
-    .optional(), // e.g. ca-pub-5077568341465757
+  NEXT_PUBLIC_SITE_URL: z.string().url().optional(), // e.g. https://remembertogo.com
+  NEXT_PUBLIC_ADSENSE_CLIENT: z.string().regex(/^ca-pub-\d+$/).optional(), // e.g. ca-pub-5077...
   NEXT_PUBLIC_PLAUSIBLE_DOMAIN: z.string().optional(), // e.g. remembertogo.com
 });
 
@@ -35,7 +29,6 @@ const _client = ClientSchema.safeParse({
 });
 
 if (!_client.success) {
-  // In production we fail hard; in dev we log a warning and continue.
   const msg = `Invalid public env: ${_client.error.issues
     .map((i) => `${i.path.join(".")}: ${i.message}`)
     .join(", ")}`;
