@@ -12,7 +12,7 @@ Allow: /
 Disallow: /api/
 
 # Sitemaps (canonical, no www)
-Sitemap: https://remembertogo.vercel.app/sitemap.xml
-Sitemap: https://remembertogo.vercel.app/sitemaps/lists
-Sitemap: https://remembertogo.vercel.app/sitemaps/places
-Sitemap: https://remembertogo.vercel.app/sitemaps/countries
+Sitemap: https://remembertogo.com/sitemap.xml
+Sitemap: https://remembertogo.com/sitemaps/lists
+Sitemap: https://remembertogo.com/sitemaps/places
+Sitemap: https://remembertogo.com/sitemaps/countries
